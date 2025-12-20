@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"lktr/internal/api"
+	"lktr/internal/client"
 	"lktr/internal/config"
 	"lktr/internal/dns"
 	"lktr/internal/server"
@@ -14,10 +14,13 @@ import (
 func main() {
 	cfg := config.Load()
 
-	fmt.Printf("DNS Proxy v1.0.0\n")
+	fmt.Printf("DNS Proxy v1.0.0 (Sidecar Mode)\n")
 	fmt.Printf("Listening on: %s\n", cfg.ListenAddr)
 	fmt.Printf("Upstream DNS: %s\n", cfg.UpstreamDNS)
-	fmt.Printf("API Server on: %s\n", cfg.APIPort)
+	if cfg.ControllerURL != "" {
+		fmt.Printf("Controller URL: %s\n", cfg.ControllerURL)
+		fmt.Printf("Fetch Interval: %v\n", cfg.FetchInterval)
+	}
 	fmt.Println("Starting DNS proxy...")
 
 	blocklist := []string{}
@@ -41,12 +44,12 @@ func main() {
 		}
 	}()
 
-	apiServer := api.NewServer(cfg.APIPort, cfg.Verbose, updateChannel)
-	go func() {
-		if err := apiServer.Start(); err != nil {
-			log.Fatalf("API server error: %v", err)
-		}
-	}()
+	if cfg.ControllerURL != "" {
+		fetcher := client.NewFetcher(cfg.ControllerURL, cfg.FetchInterval, cfg.Verbose, updateChannel)
+		go fetcher.Start()
+	} else {
+		log.Println("Warning: No controller URL specified, running without policy updates")
+	}
 
 	udpServer := server.NewUDPServer(cfg.ListenAddr, dnsHandler, cfg.Verbose)
 	tcpServer := server.NewTCPServer(cfg.ListenAddr, dnsHandler, cfg.Verbose)
