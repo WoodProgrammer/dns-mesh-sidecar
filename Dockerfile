@@ -5,7 +5,7 @@ RUN apt-get update && \
 
 WORKDIR /opt/lktr
 
-COPY . .d
+COPY . .
 RUN go mod tidy
 RUN go build -o bin/lktr ./cmd/lktr
 
