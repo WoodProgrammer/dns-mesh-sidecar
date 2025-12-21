@@ -34,7 +34,7 @@ func (s *UDPServer) Start() error {
 	}
 	defer conn.Close()
 
-	fmt.Printf("DNS proxy listening on UDP %s\n", s.ListenAddr)
+	log.Printf("DNS proxy listening on UDP %s\n", s.ListenAddr)
 
 	buffer := make([]byte, 512)
 

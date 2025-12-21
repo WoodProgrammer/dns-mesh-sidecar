@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"lktr/internal/client"
@@ -14,14 +13,14 @@ import (
 func main() {
 	cfg := config.Load()
 
-	fmt.Printf("DNS Proxy v1.0.0 (Sidecar Mode)\n")
-	fmt.Printf("Listening on: %s\n", cfg.ListenAddr)
-	fmt.Printf("Upstream DNS: %s\n", cfg.UpstreamDNS)
+	log.Printf("DNS Proxy v1.0.0 (Sidecar Mode)\n")
+	log.Printf("Listening on: %s\n", cfg.ListenAddr)
+	log.Printf("Upstream DNS: %s\n", cfg.UpstreamDNS)
 	if cfg.ControllerURL != "" {
-		fmt.Printf("Controller URL: %s\n", cfg.ControllerURL)
-		fmt.Printf("Fetch Interval: %v\n", cfg.FetchInterval)
+		log.Printf("Controller URL: %s\n", cfg.ControllerURL)
+		log.Printf("Fetch Interval: %v\n", cfg.FetchInterval)
 	}
-	fmt.Println("Starting DNS proxy...")
+	log.Printf("Starting DNS proxy...")
 
 	blocklist := []string{}
 
@@ -40,7 +39,7 @@ func main() {
 			newMatcher := matcher.BuildMatcher(newBlocklist)
 			dnsHandler.UpdateMatcher(newMatcher)
 
-			fmt.Printf("Blocklist updated successfully with %d entries\n", len(newBlocklist))
+			log.Printf("Blocklist updated successfully with %d entries\n", len(newBlocklist))
 		}
 	}()
 

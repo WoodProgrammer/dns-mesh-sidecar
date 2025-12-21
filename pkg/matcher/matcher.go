@@ -14,7 +14,7 @@ import (
 type ruleType uint8
 
 const (
-	RExact    ruleType = iota
+	RExact ruleType = iota
 	RWildcard
 )
 

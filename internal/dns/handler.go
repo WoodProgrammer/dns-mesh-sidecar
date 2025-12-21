@@ -1,7 +1,6 @@
 package dns
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"sync"
@@ -44,7 +43,7 @@ func (h *Handler) HandleUDP(serverConn *net.UDPConn, clientAddr *net.UDPAddr, qu
 	domain, qtype := ParseQuery(query)
 
 	if domain != "" {
-		fmt.Printf("[UDP] %s -> %s (%s)\n", clientAddr, domain, qtype)
+		log.Printf("[UDP] %s -> %s (%s)\n", clientAddr, domain, qtype)
 	}
 
 	m := h.getMatcher()
@@ -55,7 +54,7 @@ func (h *Handler) HandleUDP(serverConn *net.UDPConn, clientAddr *net.UDPAddr, qu
 		}
 
 		if result.Matched {
-			fmt.Printf("[UDP] Blocking %s - returning NXDOMAIN\n", domain)
+			log.Printf("[UDP] Blocking %s - returning NXDOMAIN\n", domain)
 			nxdomainResponse := CreateNXDomainResponse(query)
 			_, err := serverConn.WriteToUDP(nxdomainResponse, clientAddr)
 			if err != nil {
@@ -144,7 +143,7 @@ func (h *Handler) HandleTCP(clientConn net.Conn) {
 
 	domain, qtype := ParseQuery(query)
 	if domain != "" {
-		fmt.Printf("[TCP] %s -> %s (%s)\n", clientConn.RemoteAddr(), domain, qtype)
+		log.Printf("[TCP] %s -> %s (%s)\n", clientConn.RemoteAddr(), domain, qtype)
 	}
 
 	if h.Verbose {
@@ -159,7 +158,7 @@ func (h *Handler) HandleTCP(clientConn net.Conn) {
 		}
 
 		if result.Matched {
-			fmt.Printf("[TCP] Blocking %s - returning NXDOMAIN\n", domain)
+			log.Printf("[TCP] Blocking %s - returning NXDOMAIN\n", domain)
 			nxdomainResponse := CreateNXDomainResponse(query)
 			responseLen := len(nxdomainResponse)
 			lengthPrefix := []byte{byte(responseLen >> 8), byte(responseLen & 0xFF)}

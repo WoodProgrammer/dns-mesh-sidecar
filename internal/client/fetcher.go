@@ -2,7 +2,6 @@ package client
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -77,5 +76,5 @@ func (f *Fetcher) fetchPolicies() {
 
 	f.updateChannel <- policyResp.Blocklist
 
-	fmt.Printf("Policies fetched successfully: %d entries\n", len(policyResp.Blocklist))
+	log.Printf("Policies fetched successfully: %d entries\n", len(policyResp.Blocklist))
 }

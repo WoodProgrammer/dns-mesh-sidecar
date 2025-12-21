@@ -29,7 +29,7 @@ func (s *TCPServer) Start() error {
 	}
 	defer listener.Close()
 
-	fmt.Printf("DNS proxy listening on TCP %s\n", s.ListenAddr)
+	log.Printf("DNS proxy listening on TCP %s\n", s.ListenAddr)
 
 	for {
 		conn, err := listener.Accept()
