@@ -13,11 +13,11 @@ type PolicyResponse struct {
 }
 
 type Fetcher struct {
-	controllerURL  string
-	fetchInterval  time.Duration
-	verbose        bool
-	updateChannel  chan []string
-	httpClient     *http.Client
+	controllerURL string
+	fetchInterval time.Duration
+	verbose       bool
+	updateChannel chan []string
+	httpClient    *http.Client
 }
 
 func NewFetcher(controllerURL string, fetchInterval time.Duration, verbose bool, updateChannel chan []string) *Fetcher {
