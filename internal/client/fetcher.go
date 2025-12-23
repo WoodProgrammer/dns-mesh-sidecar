@@ -2,8 +2,10 @@ package client
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -36,23 +38,29 @@ func (f *Fetcher) Start() {
 		log.Printf("Starting policy fetcher, controller: %s, interval: %v", f.controllerURL, f.fetchInterval)
 	}
 
+	configHash := os.Getenv("DNS_MESH_CONFIG_HASH")
+	if len(configHash) == 0 {
+		log.Fatal("The config hash cannot be blank")
+	}
+
 	ticker := time.NewTicker(f.fetchInterval)
 	defer ticker.Stop()
 
 	// Fetch immediately on start
-	f.fetchPolicies()
+	f.fetchPolicies(configHash)
 
 	for range ticker.C {
-		f.fetchPolicies()
+		f.fetchPolicies(configHash)
 	}
 }
 
-func (f *Fetcher) fetchPolicies() {
+func (f *Fetcher) fetchPolicies(configHash string) {
 	if f.verbose {
 		log.Printf("Fetching policies from controller: %s", f.controllerURL)
 	}
 
-	resp, err := f.httpClient.Get(f.controllerURL)
+	url := fmt.Sprintf("%s/api/policies?hash=%s", f.controllerURL, configHash)
+	resp, err := f.httpClient.Get(url)
 	if err != nil {
 		log.Printf("Error fetching policies: %v", err)
 		return
