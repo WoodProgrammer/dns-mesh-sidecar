@@ -2,6 +2,9 @@
 
 A simple DNS proxy server written in Go that forwards DNS queries to an upstream DNS server.
 
+
+## TODO : Fix blocking of DNS during spinning up
+
 ## Features
 
 - Listens on UDP port 53 (configurable)
