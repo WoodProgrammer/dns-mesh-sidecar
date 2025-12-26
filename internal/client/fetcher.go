@@ -105,11 +105,15 @@ func (f *Fetcher) fetchPolicies(configHash string) {
 		return
 	}
 
+	policyCount := len(policyResp.Spec.BlockList)
+
 	if f.verbose {
-		log.Info().Msgf("Fetched %d policy entries from controller", len(policyResp.Spec.BlockList))
+		log.Info().Msgf("Fetched %d policy entries from controller", policyCount)
 	}
 
 	f.updateChannel <- policyResp.Spec.BlockList
 
-	log.Info().Msgf("Policies fetched successfully: %d entries\n", len(policyResp.Spec.BlockList))
+	metrics.InfoTotal.WithLabelValues(metrics.InformalMetric, "number_of_policies").Set(float64(policyCount))
+
+	log.Info().Msgf("Policies fetched successfully: %d entries\n", policyCount)
 }

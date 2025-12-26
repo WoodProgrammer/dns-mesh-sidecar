@@ -42,6 +42,13 @@ var (
 		[]string{"type", "protocol"},
 	)
 
+	InfoTotal = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "informal_metrics",
+			Help: "Number of policies",
+		},
+		[]string{"type", "protocol"},
+	)
 	// QueryDuration tracks DNS query processing duration
 	QueryDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -62,4 +69,5 @@ const (
 	ErrorTypeUpstreamTimeout = "upstream_timeout"
 	ErrorTypeClientWrite     = "client_write"
 	ErrorTypePolicyFetch     = "policy_fetch"
+	InformalMetric           = "policy"
 )
