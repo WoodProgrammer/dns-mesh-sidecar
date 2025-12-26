@@ -60,6 +60,8 @@ The dashboard includes panels for:
 - Upstream server performance
 - Policy fetch status
 
+<img src="img/dashboard.png"></img>
+
 ## Example Prometheus Configuration
 
 To scrape metrics from the sidecar, add the following to your `prometheus.yml`:
