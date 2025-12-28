@@ -115,8 +115,9 @@ func (f *Fetcher) fetchPolicies(configHash string) {
 
 	f.updateChannel <- policyResp.Spec.BlockList
 	*f.dryRun = policyResp.Spec.DryRun
-
 	metrics.InfoTotal.WithLabelValues(metrics.InformalMetric, "number_of_policies").Set(float64(policyCount))
 
-	log.Info().Msgf("Policies fetched successfully: %d entries\n", policyCount)
+	if f.verbose {
+		log.Info().Msgf("Policies fetched successfully: %d entries\n", policyCount)
+	}
 }

@@ -14,7 +14,7 @@ import (
 func main() {
 	cfg := config.Load()
 
-	log.Info().Msg("DNS Proxy v1.0.0 (Sidecar Mode)\n")
+	log.Info().Msg("DNS Proxy v0.0.3-rc (Sidecar Mode)\n")
 	log.Info().Msgf("Listening on: %s\n", cfg.ListenAddr)
 	log.Info().Msgf("Upstream DNS: %s\n", cfg.UpstreamDNS)
 	if cfg.ControllerURL != "" {
@@ -48,7 +48,9 @@ func main() {
 			dnsHandler.DryRun = cfg.DryRun
 			dnsHandler.UpdateMatcher(newMatcher)
 
-			log.Info().Msgf("Blocklist updated successfully with %d entries\n", len(newBlocklist))
+			if cfg.Verbose {
+				log.Info().Msgf("Blocklist updated successfully with %d entries\n", len(newBlocklist))
+			}
 		}
 	}()
 
