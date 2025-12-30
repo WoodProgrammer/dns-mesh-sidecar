@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"lktr/internal/metrics"
@@ -9,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	json "github.com/goccy/go-json"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
