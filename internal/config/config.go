@@ -6,19 +6,19 @@ import (
 )
 
 type Config struct {
-	ListenAddr         string
-	UpstreamDNS        string
-	Verbose            bool
-	Blocklist          []string
-	DryRun             bool
-	ControllerURL      string
-	FetchInterval      time.Duration
-	MetricsAddr        string
-	HTTPSModeEnabled   bool
-	HTTPSUpstream      string
-	TLSCACert          string
-	TLSClientCert      string
-	TLSClientKey       string
+	ListenAddr            string
+	UpstreamDNS           string
+	Verbose               bool
+	Blocklist             []string
+	DryRun                bool
+	ControllerURL         string
+	FetchInterval         time.Duration
+	MetricsAddr           string
+	HTTPSModeEnabled      bool
+	HTTPSUpstream         string
+	TLSCACert             string
+	TLSClientCert         string
+	TLSClientKey          string
 	TLSInsecureSkipVerify bool
 }
 
