@@ -28,7 +28,7 @@ type Handler struct {
 	mu               sync.RWMutex
 }
 
-func NewHandler(upstreamDNS string, verbose bool, m *matcher.Matcher, httpsModeEnabled bool, httpsUpstream string, dnsMeshDohTimeout int) *Handler {
+func NewHandler(upstreamDNS string, verbose bool, m *matcher.Matcher, httpsModeEnabled bool, httpsUpstream string, dnsMeshDohTimeout int, tlsCACert string, tlsClientCert string, tlsClientKey string, tlsInsecureSkipVerify bool) *Handler {
 	handler := &Handler{
 		UpstreamDNS:      upstreamDNS,
 		Verbose:          verbose,
@@ -44,15 +44,28 @@ func NewHandler(upstreamDNS string, verbose bool, m *matcher.Matcher, httpsModeE
 		}
 
 		dohConfig := doh.DoHConfig{
-			ServerURL: httpsUpstream,
-			TLSConfig: tlsConfig,
-			Timeout:   time.Duration(dnsMeshDohTimeout) * time.Second,
+			ServerURL:          httpsUpstream,
+			TLSConfig:          tlsConfig,
+			Timeout:            time.Duration(dnsMeshDohTimeout) * time.Second,
+			CACertPath:         tlsCACert,
+			ClientCertPath:     tlsClientCert,
+			ClientKeyPath:      tlsClientKey,
+			InsecureSkipVerify: tlsInsecureSkipVerify,
 		}
 
 		handler.DoHClient = doh.NewDoHClient(dohConfig)
 
 		if verbose {
 			log.Info().Msgf("DNS-over-HTTPS mode enabled with upstream: %s", httpsUpstream)
+			if tlsCACert != "" {
+				log.Info().Msgf("Using custom CA certificate: %s", tlsCACert)
+			}
+			if tlsClientCert != "" && tlsClientKey != "" {
+				log.Info().Msgf("Using client certificate for mTLS: %s", tlsClientCert)
+			}
+			if tlsInsecureSkipVerify {
+				log.Warn().Msg("TLS certificate verification is disabled")
+			}
 		}
 	}
 

@@ -22,6 +22,15 @@ func main() {
 	if cfg.HTTPSModeEnabled {
 		log.Info().Msgf("DNS-over-HTTPS mode: ENABLED\n")
 		log.Info().Msgf("HTTPS Upstream: %s\n", cfg.HTTPSUpstream)
+		if cfg.TLSCACert != "" {
+			log.Info().Msgf("TLS CA Certificate: %s\n", cfg.TLSCACert)
+		}
+		if cfg.TLSClientCert != "" && cfg.TLSClientKey != "" {
+			log.Info().Msgf("TLS Client Certificate: %s\n", cfg.TLSClientCert)
+		}
+		if cfg.TLSInsecureSkipVerify {
+			log.Warn().Msg("TLS certificate verification: DISABLED (insecure)\n")
+		}
 	}
 	if cfg.ControllerURL != "" {
 		log.Info().Msgf("Controller URL: %s\n", cfg.ControllerURL)
@@ -45,7 +54,7 @@ func main() {
 		dnsMeshDohTimeout = 10
 	}
 
-	dnsHandler := dns.NewHandler(cfg.UpstreamDNS, cfg.Verbose, m, cfg.HTTPSModeEnabled, cfg.HTTPSUpstream, dnsMeshDohTimeout)
+	dnsHandler := dns.NewHandler(cfg.UpstreamDNS, cfg.Verbose, m, cfg.HTTPSModeEnabled, cfg.HTTPSUpstream, dnsMeshDohTimeout, cfg.TLSCACert, cfg.TLSClientCert, cfg.TLSClientKey, cfg.TLSInsecureSkipVerify)
 
 	updateChannel := make(chan []string, 10)
 
