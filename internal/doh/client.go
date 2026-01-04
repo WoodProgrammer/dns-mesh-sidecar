@@ -27,6 +27,10 @@ type DoHConfig struct {
 	CACertPath         string
 	ClientCertPath     string
 	ClientKeyPath      string
+	// In-memory certificate data (takes precedence over file paths)
+	CACertData         []byte
+	ClientCertData     []byte
+	ClientKeyData      []byte
 	InsecureSkipVerify bool
 }
 
@@ -73,7 +77,16 @@ func loadTLSConfig(config DoHConfig) (*tls.Config, error) {
 	}
 
 	// Load CA certificate if provided
-	if config.CACertPath != "" {
+	// Prefer in-memory data over file path
+	if len(config.CACertData) > 0 {
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(config.CACertData) {
+			return nil, fmt.Errorf("failed to parse CA certificate from memory")
+		}
+
+		tlsConfig.RootCAs = caCertPool
+		log.Info().Msg("Loaded CA certificate from in-memory data")
+	} else if config.CACertPath != "" {
 		caCert, err := os.ReadFile(config.CACertPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read CA certificate: %w", err)
@@ -89,7 +102,16 @@ func loadTLSConfig(config DoHConfig) (*tls.Config, error) {
 	}
 
 	// Load client certificate and key if provided (for mTLS)
-	if config.ClientCertPath != "" && config.ClientKeyPath != "" {
+	// Prefer in-memory data over file paths
+	if len(config.ClientCertData) > 0 && len(config.ClientKeyData) > 0 {
+		clientCert, err := tls.X509KeyPair(config.ClientCertData, config.ClientKeyData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse client certificate from memory: %w", err)
+		}
+
+		tlsConfig.Certificates = []tls.Certificate{clientCert}
+		log.Info().Msg("Loaded client certificate from in-memory data")
+	} else if config.ClientCertPath != "" && config.ClientKeyPath != "" {
 		clientCert, err := tls.LoadX509KeyPair(config.ClientCertPath, config.ClientKeyPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load client certificate: %w", err)

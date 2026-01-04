@@ -12,7 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func NewFetcher(controllerURL string, fetchInterval *time.Duration, verbose bool, updateChannel chan []string, dryRun *bool, operationalMode string) *Fetcher {
+func NewFetcher(controllerURL string, fetchInterval *time.Duration, verbose bool, updateChannel chan []string, dryRun *bool, operationalMode string, tlsDataCallback func(*TLSData)) *Fetcher {
 	return &Fetcher{
 		controllerURL:   controllerURL,
 		fetchInterval:   fetchInterval,
@@ -20,6 +20,7 @@ func NewFetcher(controllerURL string, fetchInterval *time.Duration, verbose bool
 		dryRun:          dryRun,
 		operationalMode: operationalMode,
 		updateChannel:   updateChannel,
+		tlsDataCallback: tlsDataCallback,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -81,8 +82,8 @@ func (f *Fetcher) fetchPolicies(configHash string) {
 		log.Info().Msg("THE END")
 		return
 	}
-	var policyResp DnsPolicy
-	if err := json.NewDecoder(resp.Body).Decode(&policyResp); err != nil {
+	var controllerResp ControllerResponse
+	if err := json.NewDecoder(resp.Body).Decode(&controllerResp); err != nil {
 		metrics.ErrorsTotal.WithLabelValues(metrics.ErrorTypePolicyFetch, "policy_upstream_decode_err").Inc()
 		log.Info().Msgf("The operational mode is %s error on decoding", f.operationalMode)
 		switch f.operationalMode {
@@ -94,13 +95,22 @@ func (f *Fetcher) fetchPolicies(configHash string) {
 		log.Err(err).Msg("Error decoding policy response:")
 		return
 	}
-	policyCount := len(policyResp.Spec.BlockList)
+
+	// Handle TLS data if present
+	if controllerResp.TLSData != nil && f.tlsDataCallback != nil {
+		if f.verbose {
+			log.Info().Msg("TLS data received from controller, updating configuration")
+		}
+		f.tlsDataCallback(controllerResp.TLSData)
+	}
+
+	policyCount := len(controllerResp.Policy.Spec.BlockList)
 	if f.verbose {
 		log.Info().Msgf("Fetched %d policy entries from controller", policyCount)
 	}
-	f.updateChannel <- policyResp.Spec.BlockList
-	*f.dryRun = policyResp.Spec.DryRun
-	*f.fetchInterval = time.Duration(policyResp.Spec.Interval)
+	f.updateChannel <- controllerResp.Policy.Spec.BlockList
+	*f.dryRun = controllerResp.Policy.Spec.DryRun
+	*f.fetchInterval = time.Duration(controllerResp.Policy.Spec.Interval)
 	metrics.InfoTotal.WithLabelValues(metrics.InformalMetric, "number_of_policies").Set(float64(policyCount))
 
 	if f.verbose {

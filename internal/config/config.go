@@ -1,8 +1,12 @@
 package config
 
 import (
+	"encoding/base64"
 	"flag"
+	"sync"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 type Config struct {
@@ -20,6 +24,12 @@ type Config struct {
 	TLSClientCert         string
 	TLSClientKey          string
 	TLSInsecureSkipVerify bool
+
+	// Runtime TLS data fetched from controller (decoded from base64)
+	tlsClientCertData []byte
+	tlsClientKeyData  []byte
+	tlsCACertData     []byte
+	tlsMutex          sync.RWMutex
 }
 
 func Load() *Config {
@@ -43,4 +53,69 @@ func Load() *Config {
 	cfg.FetchInterval = time.Duration(fetchIntervalSec) * time.Second
 
 	return cfg
+}
+
+// UpdateTLSData updates the TLS certificate and key data from base64-encoded strings
+func (c *Config) UpdateTLSData(certBase64, keyBase64, caCertBase64 string) error {
+	c.tlsMutex.Lock()
+	defer c.tlsMutex.Unlock()
+
+	if certBase64 != "" {
+		certData, err := base64.StdEncoding.DecodeString(certBase64)
+		if err != nil {
+			log.Err(err).Msg("Failed to decode TLS certificate from base64")
+			return err
+		}
+		c.tlsClientCertData = certData
+		if c.Verbose {
+			log.Info().Msg("TLS client certificate updated from controller")
+		}
+	}
+
+	if keyBase64 != "" {
+		keyData, err := base64.StdEncoding.DecodeString(keyBase64)
+		if err != nil {
+			log.Err(err).Msg("Failed to decode TLS private key from base64")
+			return err
+		}
+		c.tlsClientKeyData = keyData
+		if c.Verbose {
+			log.Info().Msg("TLS client private key updated from controller")
+		}
+	}
+
+	if caCertBase64 != "" {
+		caCertData, err := base64.StdEncoding.DecodeString(caCertBase64)
+		if err != nil {
+			log.Err(err).Msg("Failed to decode CA certificate from base64")
+			return err
+		}
+		c.tlsCACertData = caCertData
+		if c.Verbose {
+			log.Info().Msg("CA certificate updated from controller")
+		}
+	}
+
+	return nil
+}
+
+// GetTLSClientCertData returns the decoded TLS client certificate data
+func (c *Config) GetTLSClientCertData() []byte {
+	c.tlsMutex.RLock()
+	defer c.tlsMutex.RUnlock()
+	return c.tlsClientCertData
+}
+
+// GetTLSClientKeyData returns the decoded TLS client private key data
+func (c *Config) GetTLSClientKeyData() []byte {
+	c.tlsMutex.RLock()
+	defer c.tlsMutex.RUnlock()
+	return c.tlsClientKeyData
+}
+
+// GetTLSCACertData returns the decoded CA certificate data
+func (c *Config) GetTLSCACertData() []byte {
+	c.tlsMutex.RLock()
+	defer c.tlsMutex.RUnlock()
+	return c.tlsCACertData
 }
