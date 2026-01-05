@@ -119,3 +119,24 @@ func (c *Config) GetTLSCACertData() []byte {
 	defer c.tlsMutex.RUnlock()
 	return c.tlsCACertData
 }
+
+// SetHTTPSMode dynamically enables or disables HTTPS mode
+func (c *Config) SetHTTPSMode(enabled bool) {
+	c.tlsMutex.Lock()
+	defer c.tlsMutex.Unlock()
+	c.HTTPSModeEnabled = enabled
+	if c.Verbose {
+		if enabled {
+			log.Info().Msg("DoH (DNS-over-HTTPS) mode enabled by controller")
+		} else {
+			log.Info().Msg("DoH (DNS-over-HTTPS) mode disabled by controller")
+		}
+	}
+}
+
+// IsHTTPSModeEnabled returns whether HTTPS mode is currently enabled
+func (c *Config) IsHTTPSModeEnabled() bool {
+	c.tlsMutex.RLock()
+	defer c.tlsMutex.RUnlock()
+	return c.HTTPSModeEnabled
+}

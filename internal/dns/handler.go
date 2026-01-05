@@ -113,6 +113,34 @@ func (h *Handler) UpdateTLSConfig() {
 	h.initDoHClient("", "")
 }
 
+// SetHTTPSMode dynamically enables or disables HTTPS mode
+func (h *Handler) SetHTTPSMode(enabled bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.HTTPSModeEnabled = enabled
+
+	if enabled {
+		// Initialize DoH client when enabling
+		if h.DoHClient == nil {
+			h.initDoHClient("", "")
+		}
+		if h.Verbose {
+			log.Info().Msg("DNS-over-HTTPS mode enabled")
+		}
+	} else {
+		if h.Verbose {
+			log.Info().Msg("DNS-over-HTTPS mode disabled")
+		}
+	}
+}
+
+// isHTTPSModeEnabled returns whether HTTPS mode is currently enabled (thread-safe)
+func (h *Handler) isHTTPSModeEnabled() bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.HTTPSModeEnabled
+}
+
 func (h *Handler) UpdateMatcher(m *matcher.Matcher) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -204,8 +232,9 @@ func (h *Handler) HandleUDP(serverConn *net.UDPConn, clientAddr *net.UDPAddr, qu
 	var n int
 
 	// Check if HTTPS mode is enabled
-	if h.HTTPSModeEnabled {
+	if h.isHTTPSModeEnabled() {
 		// Use DNS-over-HTTPS
+		protocol = "https"
 		response, err := h.HandleHTTPS(query, protocol)
 		if err != nil {
 			log.Err(err).Msg("Failed to query via DNS-over-HTTPS:")
@@ -387,7 +416,7 @@ func (h *Handler) HandleTCP(clientConn net.Conn) {
 	var response []byte
 
 	// Check if HTTPS mode is enabled
-	if h.HTTPSModeEnabled {
+	if h.isHTTPSModeEnabled() {
 		// Use DNS-over-HTTPS
 		dohResponse, err := h.HandleHTTPS(query, protocol)
 		if err != nil {

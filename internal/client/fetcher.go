@@ -12,7 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func NewFetcher(controllerURL string, fetchInterval *time.Duration, verbose bool, updateChannel chan []string, dryRun *bool, operationalMode string, tlsDataCallback func(*TLSData)) *Fetcher {
+func NewFetcher(controllerURL string, fetchInterval *time.Duration, verbose bool, updateChannel chan []string, dryRun *bool, operationalMode string, tlsDataCallback func(*TLSData), dohCallback func(bool)) *Fetcher {
 	return &Fetcher{
 		controllerURL:   controllerURL,
 		fetchInterval:   fetchInterval,
@@ -21,6 +21,7 @@ func NewFetcher(controllerURL string, fetchInterval *time.Duration, verbose bool
 		operationalMode: operationalMode,
 		updateChannel:   updateChannel,
 		tlsDataCallback: tlsDataCallback,
+		dohCallback:     dohCallback,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -96,12 +97,23 @@ func (f *Fetcher) fetchPolicies(configHash string) {
 		return
 	}
 
-	// Handle TLS data if present
-	if controllerResp.TLSData != nil && f.tlsDataCallback != nil {
+	// Handle DoH status update
+	if f.dohCallback != nil {
+		if f.verbose {
+			fmt.Println("The DOH status is ", controllerResp.Policy.Spec.Doh)
+			log.Info().Msgf("DoH status from controller: %v", controllerResp.Policy.Spec.Doh)
+		}
+		f.dohCallback(controllerResp.Policy.Spec.Doh)
+	}
+
+	// Handle TLS data if DoH is enabled and TLS data is present
+	if controllerResp.Policy.Spec.Doh && controllerResp.TLSData != nil && f.tlsDataCallback != nil {
 		if f.verbose {
 			log.Info().Msg("TLS data received from controller, updating configuration")
 		}
 		f.tlsDataCallback(controllerResp.TLSData)
+	} else if !controllerResp.Policy.Spec.Doh && f.verbose {
+		log.Info().Msg("DoH disabled, skipping TLS data processing")
 	}
 
 	policyCount := len(controllerResp.Policy.Spec.BlockList)

@@ -20,6 +20,7 @@ type DnsPolicySpec struct {
 	AllowList      []string          `json:"allowList,omitempty"`
 	BlockList      []string          `json:"blockList,omitempty"`
 	DryRun         bool              `json:"dryrun,omitempty"`
+	Doh            bool              `json:"doh,omitempty"`
 	Interval       int               `json:"interval,omitempty"`
 }
 
@@ -50,4 +51,5 @@ type Fetcher struct {
 	updateChannel   chan []string
 	httpClient      *http.Client
 	tlsDataCallback func(*TLSData) // callback to update TLS data when fetched
+	dohCallback     func(bool)     // callback to update DoH status when fetched
 }

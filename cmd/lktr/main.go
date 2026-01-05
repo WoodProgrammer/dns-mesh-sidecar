@@ -79,6 +79,21 @@ func main() {
 
 	operationalMode := os.Getenv("DNS_MESH_OPERATIONAL_MODE")
 	if cfg.ControllerURL != "" {
+		// Create DoH callback to update DoH mode when controller changes it
+		dohCallback := func(enabled bool) {
+			// Update config DoH status
+			cfg.SetHTTPSMode(enabled)
+			// Update DNS handler DoH status
+			dnsHandler.SetHTTPSMode(enabled)
+			if cfg.Verbose {
+				if enabled {
+					log.Info().Msg("DoH mode dynamically enabled by controller")
+				} else {
+					log.Info().Msg("DoH mode dynamically disabled by controller")
+				}
+			}
+		}
+
 		// Create TLS data callback to update config when controller provides new TLS data
 		tlsCallback := func(tlsData *client.TLSData) {
 			if err := cfg.UpdateTLSData(tlsData.Certificate, tlsData.PrivateKey, tlsData.CACertificate); err != nil {
@@ -86,8 +101,8 @@ func main() {
 				return
 			}
 
-			// Update DoH client with new TLS configuration
-			if cfg.HTTPSModeEnabled {
+			// Update DoH client with new TLS configuration if DoH is enabled
+			if cfg.IsHTTPSModeEnabled() {
 				dnsHandler.UpdateTLSConfig()
 				if cfg.Verbose {
 					log.Info().Msg("DoH client updated with new TLS credentials from controller")
@@ -95,7 +110,7 @@ func main() {
 			}
 		}
 
-		fetcher := client.NewFetcher(cfg.ControllerURL, &cfg.FetchInterval, cfg.Verbose, updateChannel, &cfg.DryRun, operationalMode, tlsCallback)
+		fetcher := client.NewFetcher(cfg.ControllerURL, &cfg.FetchInterval, cfg.Verbose, updateChannel, &cfg.DryRun, operationalMode, tlsCallback, dohCallback)
 		go fetcher.Start()
 	} else {
 		log.Info().Msgf("Warning: No controller URL specified, running without policy updates")
